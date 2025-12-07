@@ -6,7 +6,7 @@ This project simulates a network environment in **NS-3** consisting of an **Atta
 
 ### Attacks Implemented (Attacker Node)
 
-1.  **UDP Flood:** Continuous, recursive packet stream designed to overwhelm the vitim's processing capacity (DoS).
+1.  **UDP Flood:** Continuous, recursive packet stream designed to overwhelm the victim's processing capacity (DoS).
 2.  **ICMP Flood:** Simulated via UDP Port 0 to mimic Ping flooding.
 3.  **Malware Injection:** Packets containing a specific malicious payload signature ("MALWARE\_HASH").
 
