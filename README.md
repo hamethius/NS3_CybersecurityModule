@@ -1,6 +1,6 @@
 # NS-3 Cybersecurity Simulation: Attacks & Defense Module
 
-This project simulates a network environment in **NS-3** consisting of an **Attacker Node** and a **Victim Node**. It implements three distinct cyber attacks and a corresponding Defense Module (IDS/Firewall) to detect and mitigate them.
+This project simulates a network environment in **NS-3** consisting of an **Attacker Node** and a **Victim Node**. It implements three distinct cyber attacks and a corresponding Defense Module (IDS/Firewall) to detect and mitigate them using Layer 3 inspection.
 
 ## 1\. Project Overview
 
@@ -12,8 +12,8 @@ This project simulates a network environment in **NS-3** consisting of an **Atta
 
 ### Defenses Implemented (Victim Node)
 
-1.  **Rate Limiting:** Detects high-volume traffic from a single IP and temporarily drops packets.
-2.  **Protocol Filtering:** Inspects headers to block malformed traffic (e.g., UDP to Port 0).
+1.  **Rate Limiting:** Detects high-volume traffic from a single IP and drops packets exceeding a threshold (50 pkts/sec).
+2.  **Protocol Filtering:** Inspects headers to block malformed traffic (e.g., UDP targeting Port 0).
 3.  **Deep Packet Inspection (DPI):** Scans packet payloads for known malware signatures.
 
 -----
@@ -48,15 +48,15 @@ cd ns-3-dev
     ```bash
     touch cyb-project.cc
     ```
-3.  Paste the **final C++ code** provided into `cyb-project.cc`.
+3.  Paste the **final C++ code** provided in the project source into `cyb-project.cc`.
 
 -----
 
-## 4\. How to Run
+## 4\. How to Run & Read Logs
 
 ### Basic Execution
 
-To run the simulation with **all attacks** and **all defenses** enabled (By Default):
+To run the simulation with all attacks enabled and view the detailed log:
 
 ```bash
 ./ns3 run scratch/cyb-project
@@ -64,22 +64,27 @@ To run the simulation with **all attacks** and **all defenses** enabled (By Defa
 
 ### Understanding the Output
 
-The console uses color-coded logs to indicate events:
+The console output is now organized into a structured audit trail with the following columns:
+`[TIME] | [NODE] | [SRC IP] | [PROTO] | [ACTION] | [REASON / INFO]`
 
-  * **RED:** Flood Detected (Rate Limiting triggered).
-  * **YELLOW:** Protocol Violation (ICMP/Port 0 packet blocked).
-  * **PURPLE:** Malware Signature Detected (DPI Block).
+The logs use color coding to indicate status:
+
+  * **\<span style="color:green"\>GREEN (PASS):\</span\>** Legitimate traffic (e.g., TCP Background traffic).
+  * **\<span style="color:red"\>RED (DROP):\</span\>** Flood Detected (Rate Limit Exceeded).
+  * **\<span style="color:yellow"\>YELLOW (DROP):\</span\>** Protocol Violation (Fake ICMP/Port 0).
+  * **\<span style="color:purple"\>PURPLE (DROP):\</span\>** Malware Signature Detected (DPI Block).
 
 -----
 
 ## 5\. Configuration & Scenarios
 
-You can enable or disable specific parts of the simulation using command-line flags without changing the code.
+You can enable or disable specific parts of the simulation using command-line flags.
 
 ### Available Flags
 
 | Flag | Description | Default |
 | :--- | :--- | :--- |
+| `--summary` | **New\!** Reduces log spam (shows only 3 drops/sec) | `false` |
 | `--firewall` | Master switch for the Defense Module | `true` |
 | `--defenseFlood` | Enable/Disable Rate Limiting | `true` |
 | `--defenseIcmp` | Enable/Disable Port 0 Filtering | `true` |
@@ -90,34 +95,34 @@ You can enable or disable specific parts of the simulation using command-line fl
 
 ### Example Scenarios
 
-#### Scenario A: The " Stress Test" (Default)
+#### Scenario A: Clean Terminal View (Recommended)
 
-Run everything to see how the system handles multiple simultaneous threats.
+Use summary mode to suppress the thousands of "Flood Detected" messages. This makes it easy to see the Malware and ICMP blocks on the screen.
 
 ```bash
-./ns3 run scratch/cyb-project
+./ns3 run "scratch/cyb-project --summary=true"
 ```
 
-#### Scenario B: "Malware Analysis"
+#### Scenario B: Full Audit Log (For Reports)
 
-Disable the noisy Flood attacks to clearly see the Malware Detection logic working.
+Capture every single packet decision (authorized and dropped) into a text file for analysis.
+
+```bash
+./ns3 run scratch/cyb-project > log_full.txt
+```
+
+#### Scenario C: "Malware Analysis"
+
+Disable the noisy Flood attacks to isolate the Malware Detection logic.
 
 ```bash
 ./ns3 run "scratch/cyb-project --attackFlood=false --attackIcmp=false"
 ```
 
-#### Scenario C: "Defense Failure"
+#### Scenario D: "Defense Failure"
 
 Turn off the firewall completely to see the network process all malicious traffic (no blocked messages).
 
 ```bash
 ./ns3 run "scratch/cyb-project --firewall=false"
-```
-
-#### Scenario D: "Testing Specific Defenses"
-
-Run attacks but disable the Rate Limiter to see the consequences of flooding.
-
-```bash
-./ns3 run "scratch/cyb-project --defenseFlood=false"
 ```
