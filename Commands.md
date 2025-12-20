@@ -1,94 +1,82 @@
-# NS-3 Simulation Commands & Cheatsheet
+# Simulation Commands & Cheat Sheet
 
-This document outlines the various ways to run the Cybersecurity simulation, including how to isolate attacks, test specific defenses, and manage log output.
+This document outlines how to run the four specific attack scenarios included in the `ns3cybermod` suite.
 
-### 1\. The "Run Everything" Scenarios (Recommended)
+---
 
-These are the best ways to run the full simulation with all attacks (UDP, ICMP, Malware) and defenses active.
+### 1. Volumetric Attack (UDP Flood)
+**Goal:** Test network saturation and packet loss.
+This scenario sets up 3 Attackers and 1 Victim. The attackers blast UDP packets at 50Mbps each.
 
-**A. Clean Terminal View (Best for Live Demo)**
-Uses the **Summary Mode** to suppress the massive amount of Flood logs. You will see the attacks start and stop, and catch the specific Malware/ICMP events clearly on the screen.
-
+**Command:**
 ```bash
-./ns3 run "scratch/cyb-project --summary=true"
+./ns3 run scratch/scenario-udp-flood
+
 ```
 
-**B. Full Audit Log (Best for Reports)**
-Runs the simulation in detailed mode and saves **every single packet decision** to a text file. The terminal will remain empty, but the file will contain the complete audit trail.
+**Expected Output:**
+
+* **Packets Sent:** High (e.g., ~15,000)
+* **Packets Received:** Lower than sent.
+* **Observation:** The difference between Sent/Received represents packets dropped due to congestion.
+
+---
+
+### 2. Service Exhaustion (TCP Flood)
+
+**Goal:** Test server resource exhaustion (e.g., Web Server Port 80).
+This scenario targets TCP connections. It verifies that the simulation correctly handles connection-oriented protocols.
+
+**Command:**
 
 ```bash
-./ns3 run scratch/cyb-project > full_audit_log.txt
+./ns3 run scratch/scenario-tcp-flood
+
 ```
 
------
+**Expected Output:**
 
-### 2\. Attack Scenarios (Isolate Specific Attacks)
+* **Attackers:** 3 Nodes attacking Port 80.
+* **Packets:** Shows successful TCP connection attempts and data transfer.
 
-Use these to turn off the "noise" of other attacks and focus on testing one specific vector.
+---
 
-**A. Test Only Malware Detection**
-Disable the floods so you can clearly see the Deep Packet Inspection (DPI) logic working without distraction.
+### 3. Identity Theft (IP Spoofing)
+
+**Goal:** Demonstrate IP Header manipulation.
+Attackers randomly select other nodes in the network and use *their* IP addresses as the Source IP.
+
+**Command:**
 
 ```bash
-./ns3 run "scratch/cyb-project --attackFlood=false --attackIcmp=false"
+./ns3 run scratch/scenario-spoofing
+
 ```
 
-**B. Test Only Rate Limiting (UDP Flood)**
-Isolate the flood to see if the threshold triggers correctly.
-*(Note: This produces a lot of logs, so you might want to add `--summary=true`)*
+**Expected Output:**
+
+* Look for logs like: `[IP SPOOFING] Attacker 0 impersonating PC4`.
+* This confirms the randomization logic in the library is working.
+
+---
+
+### 4. Man-in-the-Middle (Replay Attack)
+
+**Goal:** Capture and re-transmit traffic.
+
+* **Phase 1 (1s-4s):** "Normal" background traffic flows between nodes.
+* **Phase 2 (6s-10s):** Attacker captures this traffic and replays it.
+
+**Command:**
 
 ```bash
-./ns3 run "scratch/cyb-project --attackIcmp=false --attackMalware=false --summary=true"
+./ns3 run scratch/scenario-replay
+
 ```
 
-**C. Test Only ICMP/Port Filtering**
-Check if the specific Port 0 filter is working against the fake ICMP attack.
+**Expected Output:**
 
-```bash
-./ns3 run "scratch/cyb-project --attackFlood=false --attackMalware=false"
-```
+* Look for logs like: `[REPLAY] Attacker 0 replaying packet...`.
+* Verifies the "Traffic Capture" feature of the library.
 
------
-
-### 3\. Defense Failure Scenarios (Simulate Vulnerabilities)
-
-Use these to prove that your defenses are actually working by turning them off and observing the failure.
-
-**D. Simulate Malware Infection (Defense OFF)**
-Run the malware attack, but turn **OFF** the malware defense.
-*Result:* You will see the attack launch, but **NO** "Malware Detected" message. The packet successfully reaches the victim.
-
-```bash
-./ns3 run "scratch/cyb-project --defenseMalware=false"
-```
-
-**E. Simulate Network Overload (Rate Limit OFF)**
-Run the flood attack, but turn **OFF** the rate limiter.
-*Result:* The attacker floods the network, but you will see **NO** "Flood Detected" messages.
-
-```bash
-./ns3 run "scratch/cyb-project --defenseFlood=false"
-```
-
-**F. Total System Failure**
-Turn the entire firewall off.
-*Result:* All attacks pass through successfully. Valid traffic is marked as "PASS (Firewall Disabled)".
-
-```bash
-./ns3 run "scratch/cyb-project --firewall=false"
-```
-
------
-
-### 4\. Cheat Sheet: All Available Flags
-
-| Flag | Default | Function |
-| :--- | :--- | :--- |
-| `--summary` | `false` | **Log Reducer.** If true, shows only 3 events/sec to keep terminal clean. |
-| `--firewall` | `true` | **Master Switch.** If false, the defense module does nothing. |
-| `--defenseFlood` | `true` | **Rate Limiter.** If false, ignores high packet rates. |
-| `--defenseIcmp` | `true` | **Port Filter.** If false, allows traffic to Port 0. |
-| `--defenseMalware` | `true` | **DPI.** If false, ignores packet payload signatures. |
-| `--attackFlood` | `true` | **UDP Flood.** If false, attacker stops sending flood packets. |
-| `--attackIcmp` | `true` | **ICMP Flood.** If false, attacker stops sending ICMP packets. |
-| `--attackMalware` | `true` | **Malware.** If false, attacker stops sending the malware packet. |
+---
