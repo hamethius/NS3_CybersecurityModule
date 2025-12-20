@@ -1,128 +1,69 @@
-# NS-3 Cybersecurity Simulation: Attacks & Defense Module
+# NS-3 Cyber Attack Simulation Suite
 
-This project simulates a network environment in **NS-3** consisting of an **Attacker Node** and a **Victim Node**. It implements three distinct cyber attacks and a corresponding Defense Module (IDS/Firewall) to detect and mitigate them using Layer 3 inspection.
+This project is a modular cybersecurity simulation library built for **NS-3**. It implements a custom C++ module (`ns3cybermod`) that allows users to easily simulate, detect, and analyze various network attacks in a controlled environment.
 
-## 1\. Project Overview
+## 1. Project Overview
 
-### Attacks Implemented (Attacker Node)
+The simulation focuses on Layer 3 and Layer 4 network attacks, utilizing a custom library to generate malicious traffic and capture metrics.
 
-1.  **UDP Flood:** Continuous, recursive packet stream designed to overwhelm the victim's processing capacity (DoS).
-2.  **ICMP Flood:** Simulated via UDP Port 0 to mimic Ping flooding.
-3.  **Malware Injection:** Packets containing a specific malicious payload signature ("MALWARE\_HASH").
+### Implemented Attack Scenarios
 
-### Defenses Implemented (Victim Node)
+| Attack Type | File Name | Description |
+| :--- | :--- | :--- |
+| **UDP Flood** | `scenario-udp-flood` | **Volumetric DoS.** Floods the victim with high-bandwidth UDP traffic to saturate network links. |
+| **TCP Flood** | `scenario-tcp-flood` | **Service Exhaustion.** Overwhelms the victim's connection queue (e.g., Port 80) with rapid TCP requests. |
+| **IP Spoofing** | `scenario-spoofing` | **Identity Theft.** Attackers forge the "Source IP" in packet headers to frame innocent nodes. |
+| **Replay Attack** | `scenario-replay` | **Man-in-the-Middle.** Captures legitimate traffic and re-transmits it later to duplicate transactions. |
 
-1.  **Rate Limiting:** Detects high-volume traffic from a single IP and drops packets exceeding a threshold (50 pkts/sec).
-2.  **Protocol Filtering:** Inspects headers to block malformed traffic (e.g., UDP targeting Port 0).
-3.  **Deep Packet Inspection (DPI):** Scans packet payloads for known malware signatures.
+---
 
------
+## 2. Installation & Setup
 
-## 2\. Installation & Prerequisites
+Prerequisite: You must have a working installation of **NS-3 (ns-3-dev)**.
 
-If you have not set up NS-3 yet, run these commands on your Ubuntu machine:
+### Step 1: Clone or Download
+Clone this repository to your local machine.
+
+### Step 2: Install the Custom Module
+Copy the `ns3cybermod` folder from this repo's `src/` directory into your NS-3 `src/` directory.
+```bash
+cp -r ns3-cyber-project/src/ns3cybermod ~/ns-3-dev/src/
+
+```
+
+### Step 3: Install the Scenarios
+
+Copy the C++ files from this repo's `scratch/` directory into your NS-3 `scratch/` directory.
 
 ```bash
-# 1. Install Dependencies
-sudo apt update
-sudo apt install -y build-essential python3-dev cmake git g++ python3-setuptools
+cp ns3-cyber-project/scratch/*.cc ~/ns-3-dev/scratch/
 
-# 2. Clone NS-3 Repository
-git clone https://gitlab.com/nsnam/ns-3-dev.git
-cd ns-3-dev
+```
 
-# 3. Build NS-3
+### Step 4: Rebuild NS-3
+
+You must reconfigure NS-3 so it detects the new `ns3cybermod` library.
+
+```bash
+cd ~/ns-3-dev
 ./ns3 configure --enable-examples --enable-tests
 ./ns3 build
+
 ```
 
------
+---
 
-## 3\. Setup
+## 3. How to Run
 
-1.  Navigate to the scratch directory:
-    ```bash
-    cd ns-3-dev/scratch
-    ```
-2.  Create the project file:
-    ```bash
-    touch cyb-project.cc
-    ```
-3.  Paste the **final C++ code** provided in the project source into `cyb-project.cc`.
+Since the project is modular, you do not run a single file with flags anymore. Instead, you run the specific **scenario file** for the attack you want to simulate.
 
------
-
-## 4\. How to Run & Read Logs
-
-### Basic Execution
-
-To run the simulation with all attacks enabled and view the detailed log:
+**Example: Running the TCP Flood**
 
 ```bash
-./ns3 run scratch/cyb-project
+./ns3 run scratch/scenario-tcp-flood
+
 ```
 
-### Understanding the Output
+See `Commands.md` for the full list of commands and expected outputs.
 
-The console output is now organized into a structured audit trail with the following columns:
-`[TIME] | [NODE] | [SRC IP] | [PROTO] | [ACTION] | [REASON / INFO]`
-
-The logs use color coding to indicate status:
-
-  * **\<span style="color:green"\>GREEN (PASS):\</span\>** Legitimate traffic (e.g., TCP Background traffic).
-  * **\<span style="color:red"\>RED (DROP):\</span\>** Flood Detected (Rate Limit Exceeded).
-  * **\<span style="color:yellow"\>YELLOW (DROP):\</span\>** Protocol Violation (Fake ICMP/Port 0).
-  * **\<span style="color:purple"\>PURPLE (DROP):\</span\>** Malware Signature Detected (DPI Block).
-
------
-
-## 5\. Configuration & Scenarios
-
-You can enable or disable specific parts of the simulation using command-line flags.
-
-### Available Flags
-
-| Flag | Description | Default |
-| :--- | :--- | :--- |
-| `--summary` | **New\!** Reduces log spam (shows only 3 drops/sec) | `false` |
-| `--firewall` | Master switch for the Defense Module | `true` |
-| `--defenseFlood` | Enable/Disable Rate Limiting | `true` |
-| `--defenseIcmp` | Enable/Disable Port 0 Filtering | `true` |
-| `--defenseMalware` | Enable/Disable Deep Packet Inspection | `true` |
-| `--attackFlood` | Run UDP Flood Attack | `true` |
-| `--attackIcmp` | Run ICMP Flood Attack | `true` |
-| `--attackMalware` | Run Malware Attack | `true` |
-
-### Example Scenarios
-
-#### Scenario A: Clean Terminal View (Recommended)
-
-Use summary mode to suppress the thousands of "Flood Detected" messages. This makes it easy to see the Malware and ICMP blocks on the screen.
-
-```bash
-./ns3 run "scratch/cyb-project --summary=true"
-```
-
-#### Scenario B: Full Audit Log (For Reports)
-
-Capture every single packet decision (authorized and dropped) into a text file for analysis.
-
-```bash
-./ns3 run scratch/cyb-project > log_full.txt
-```
-
-#### Scenario C: "Malware Analysis"
-
-Disable the noisy Flood attacks to isolate the Malware Detection logic.
-
-```bash
-./ns3 run "scratch/cyb-project --attackFlood=false --attackIcmp=false"
-```
-
-#### Scenario D: "Defense Failure"
-
-Turn off the firewall completely to see the network process all malicious traffic (no blocked messages).
-
-```bash
-./ns3 run "scratch/cyb-project --firewall=false"
 ```
