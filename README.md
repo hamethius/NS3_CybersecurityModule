@@ -66,3 +66,21 @@ Since the project is modular, you do not run a single file with flags anymore. I
 
 See `Commands.md` for the full list of commands and expected outputs.
 
+### 5. Optional: Generating PCAP Files (Wireshark)
+
+To view these attacks in Wireshark, you can modify any scenario file (e.g., `scenario-udp-flood.cc`) and add this line just before `Simulator::Run();`:
+
+```cpp
+csma.EnablePcapAll("cyber-attack");
+
+```
+
+**Then run:**
+
+```bash
+./ns3 run scratch/scenario-udp-flood
+
+```
+
+**View Results:**
+Open the generated `.pcap` files in Wireshark to inspect the packet headers manually.
