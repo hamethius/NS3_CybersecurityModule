@@ -66,4 +66,3 @@ Since the project is modular, you do not run a single file with flags anymore. I
 
 See `Commands.md` for the full list of commands and expected outputs.
 
-```
